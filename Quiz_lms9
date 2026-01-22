@@ -1,0 +1,28 @@
+// Lấy Login và Điểm (thang 10, làm tròn 0.5)
+(function() {
+    const rows = document.querySelectorAll('table tbody tr, .ilTableOuter tbody tr');
+    let output = 'Login\tĐiểm\n';
+    
+    rows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        if (cells.length >= 8) {
+            const login = cells[2]?.textContent?.trim() || '';
+            const percentText = cells[7]?.textContent?.trim() || '0';
+            const percent = parseFloat(percentText.replace('%', '').replace(',', '.'));
+            
+            // Chuyển sang thang 10 và làm tròn đến 0.5
+            const score = Math.round((percent / 10) * 2) / 2;
+            
+            if (login) {
+                output += `${login}\t${score}\n`;
+            }
+        }
+    });
+    
+    console.log(output);
+    
+    // Copy vào clipboard
+    navigator.clipboard.writeText(output).then(() => {
+        console.log('✅ Đã copy vào clipboard!');
+    });
+})();
