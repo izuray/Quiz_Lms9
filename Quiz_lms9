@@ -1,28 +1,36 @@
-// Lấy Login và Điểm (thang 10, làm tròn 0.5)
-(function() {
-    const rows = document.querySelectorAll('table tbody tr, .ilTableOuter tbody tr');
-    let output = 'Login\tĐiểm\n';
-    
+// 1. Tìm vị trí cột
+const headers = Array.from(document.querySelectorAll("table th"));
+const loginIndex = headers.findIndex(h => h.innerText.trim() === "Login");
+const percentIndex = headers.findIndex(h => h.innerText.trim() === "Percent Solved");
+
+if (loginIndex === -1 || percentIndex === -1) {
+    console.error("Không tìm thấy cột cần thiết.");
+} else {
+    const rows = document.querySelectorAll("table tbody tr");
+    let outputText = ""; // Biến chứa toàn bộ nội dung văn bản
+
     rows.forEach(row => {
-        const cells = row.querySelectorAll('td');
-        if (cells.length >= 8) {
-            const login = cells[2]?.textContent?.trim() || '';
-            const percentText = cells[7]?.textContent?.trim() || '0';
-            const percent = parseFloat(percentText.replace('%', '').replace(',', '.'));
+        const cells = row.children;
+        
+        if (cells.length > Math.max(loginIndex, percentIndex)) {
+            const login = cells[loginIndex].innerText.trim();
+            const percentText = cells[percentIndex].innerText.trim(); 
             
-            // Chuyển sang thang 10 và làm tròn đến 0.5
-            const score = Math.round((percent / 10) * 2) / 2;
+            // Xử lý điểm số
+            const percentNumber = parseFloat(percentText.replace('%', '')); 
             
-            if (login) {
-                output += `${login}\t${score}\n`;
+            if (!isNaN(percentNumber)) {
+                // Tính thang điểm 10 và làm tròn 1 số thập phân
+                let finalScore = Math.round((percentNumber / 10) * 10) / 10;
+                
+                // Cộng dồn vào chuỗi văn bản (Login + Tab + Điểm + Xuống dòng)
+                outputText += `${login}\t${finalScore}\n`;
             }
         }
     });
-    
-    console.log(output);
-    
-    // Copy vào clipboard
-    navigator.clipboard.writeText(output).then(() => {
-        console.log('✅ Đã copy vào clipboard!');
-    });
-})();
+
+    // 2. Xuất kết quả
+    console.log("--- BẮT ĐẦU COPY TỪ DÒNG DƯỚI ---");
+    console.log(outputText);
+    console.log("--- HẾT ---");
+}
