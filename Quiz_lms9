@@ -4,33 +4,140 @@ const loginIndex = headers.findIndex(h => h.innerText.trim() === "Login");
 const percentIndex = headers.findIndex(h => h.innerText.trim() === "Percent Solved");
 
 if (loginIndex === -1 || percentIndex === -1) {
-    console.error("Không tìm thấy cột cần thiết.");
+    alert("Không tìm thấy cột 'Login' hoặc 'Percent Solved'. Vui lòng kiểm tra lại trang web.");
 } else {
+    // --- TẠO GIAO DIỆN POPUP ---
+    // Xóa popup cũ nếu lỡ chạy code 2 lần
+    const oldPopup = document.getElementById('score-popup');
+    if (oldPopup) oldPopup.remove();
+
+    // Tạo màn hình nền mờ
+    const overlay = document.createElement("div");
+    overlay.id = "score-popup";
+    overlay.style.position = "fixed";
+    overlay.style.top = "0";
+    overlay.style.left = "0";
+    overlay.style.width = "100%";
+    overlay.style.height = "100%";
+    overlay.style.backgroundColor = "rgba(0,0,0,0.5)";
+    overlay.style.zIndex = "9999";
+    overlay.style.display = "flex";
+    overlay.style.justifyContent = "center";
+    overlay.style.alignItems = "center";
+
+    // Tạo hộp nội dung chính
+    const box = document.createElement("div");
+    box.style.backgroundColor = "white";
+    box.style.padding = "20px";
+    box.style.borderRadius = "8px";
+    box.style.boxShadow = "0 4px 6px rgba(0,0,0,0.1)";
+    box.style.maxWidth = "500px";
+    box.style.width = "90%";
+    box.style.maxHeight = "80vh"; // Giới hạn chiều cao
+    box.style.display = "flex";
+    box.style.flexDirection = "column";
+
+    // Tiêu đề
+    const title = document.createElement("h3");
+    title.innerText = "Kết Quả Điểm Số";
+    title.style.marginTop = "0";
+    title.style.marginBottom = "15px";
+    title.style.textAlign = "center";
+    box.appendChild(title);
+
+    // Khu vực chứa bảng (để cuộn nếu danh sách dài)
+    const tableContainer = document.createElement("div");
+    tableContainer.style.overflowY = "auto";
+    tableContainer.style.flex = "1";
+    tableContainer.style.border = "1px solid #ddd";
+    tableContainer.style.marginBottom = "15px";
+
+    // Tạo bảng dữ liệu
+    const table = document.createElement("table");
+    table.style.width = "100%";
+    table.style.borderCollapse = "collapse";
+    table.innerHTML = `
+        <thead>
+            <tr style="background-color: #f2f2f2;">
+                <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Login</th>
+                <th style="border: 1px solid #ddd; padding: 8px; text-align: center;">Điểm (Thang 10)</th>
+            </tr>
+        </thead>
+        <tbody id="score-body"></tbody>
+    `;
+    tableContainer.appendChild(table);
+    box.appendChild(tableContainer);
+
+    // --- XỬ LÝ DỮ LIỆU (LOGIC CŨ CỦA BẠN) ---
     const rows = document.querySelectorAll("table tbody tr");
-    let outputText = ""; // Biến chứa toàn bộ nội dung văn bản
+    const tbody = table.querySelector("#score-body");
+    let copyTextData = ""; // Dữ liệu dạng text để copy clipboard
 
     rows.forEach(row => {
         const cells = row.children;
-        
         if (cells.length > Math.max(loginIndex, percentIndex)) {
             const login = cells[loginIndex].innerText.trim();
-            const percentText = cells[percentIndex].innerText.trim(); 
-            
+            const percentText = cells[percentIndex].innerText.trim();
+
             // Xử lý điểm số
-            const percentNumber = parseFloat(percentText.replace('%', '')); 
-            
+            const percentNumber = parseFloat(percentText.replace('%', ''));
+
             if (!isNaN(percentNumber)) {
                 // Tính thang điểm 10 và làm tròn 1 số thập phân
                 let finalScore = Math.round((percentNumber / 10) * 10) / 10;
-                
-                // Cộng dồn vào chuỗi văn bản (Login + Tab + Điểm + Xuống dòng)
-                outputText += `${login}\t${finalScore}\n`;
+
+                // 1. Thêm vào bảng hiển thị
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td style="border: 1px solid #ddd; padding: 8px;">${login}</td>
+                    <td style="border: 1px solid #ddd; padding: 8px; text-align: center; font-weight: bold;">${finalScore}</td>
+                `;
+                tbody.appendChild(tr);
+
+                // 2. Cộng dồn vào chuỗi để copy (Format cho Excel)
+                copyTextData += `${login}\t${finalScore}\n`;
             }
         }
     });
 
-    // 2. Xuất kết quả
-    console.log("--- BẮT ĐẦU COPY TỪ DÒNG DƯỚI ---");
-    console.log(outputText);
-    console.log("--- HẾT ---");
+    // --- CÁC NÚT ĐIỀU KHIỂN ---
+    const btnGroup = document.createElement("div");
+    btnGroup.style.display = "flex";
+    btnGroup.style.gap = "10px";
+    btnGroup.style.justifyContent = "flex-end";
+
+    // Nút Copy
+    const btnCopy = document.createElement("button");
+    btnCopy.innerText = "Copy vào Clipboard";
+    btnCopy.style.padding = "8px 16px";
+    btnCopy.style.backgroundColor = "#28a745";
+    btnCopy.style.color = "white";
+    btnCopy.style.border = "none";
+    btnCopy.style.borderRadius = "4px";
+    btnCopy.style.cursor = "pointer";
+    btnCopy.onclick = () => {
+        navigator.clipboard.writeText(copyTextData).then(() => {
+            btnCopy.innerText = "Đã Copy!";
+            setTimeout(() => btnCopy.innerText = "Copy vào Clipboard", 2000);
+        });
+    };
+
+    // Nút Đóng
+    const btnClose = document.createElement("button");
+    btnClose.innerText = "Đóng";
+    btnClose.style.padding = "8px 16px";
+    btnClose.style.backgroundColor = "#dc3545";
+    btnClose.style.color = "white";
+    btnClose.style.border = "none";
+    btnClose.style.borderRadius = "4px";
+    btnClose.style.cursor = "pointer";
+    btnClose.onclick = () => overlay.remove();
+
+    btnGroup.appendChild(btnCopy);
+    btnGroup.appendChild(btnClose);
+    box.appendChild(btnGroup);
+
+    // Gắn vào trang web
+    overlay.appendChild(box);
+    document.body.appendChild(overlay);
 }
